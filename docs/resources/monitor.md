@@ -16,6 +16,14 @@ resource "uptimerobot_monitor" "my_website" {
   type          = "http"
   url           = "http://example.com"
 }
+
+resource "uptimerobot_monitor" "my_https_website" {
+  friendly_name         = "My HTTPS Monitor"
+  type                  = "http"
+  url                   = "https://example.com"
+  ssl_expiration_check  = true
+  ignore_ssl_errors     = false
+}
 ```
 
 ## Arguments Reference
@@ -55,6 +63,8 @@ resource "uptimerobot_monitor" "my_website" {
   - `basic`
   - `digest`
 * `interval` - the interval for the monitoring check (300 seconds by default).
+* `ignore_ssl_errors` - ignore SSL certificate errors (false by default).
+* `ssl_expiration_check` - enable SSL certificate expiration reminders (false by default). When enabled (true), UptimeRobot will send notifications before the SSL certificate expires. Maps to the `sslExpirationReminder` parameter in UptimeRobot API v3.
 
 ## Attributes Reference
 

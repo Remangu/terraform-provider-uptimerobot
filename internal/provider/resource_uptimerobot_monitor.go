@@ -115,6 +115,11 @@ func resourceMonitor() *schema.Resource {
 				Type:     schema.TypeMap,
 				Optional: true,
 			},
+			"ssl_expiration_check": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			// TODO - mwindows
 		},
 	}
@@ -153,6 +158,7 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 	req.Interval = d.Get("interval").(int)
 
 	req.IgnoreSSLErrors = d.Get("ignore_ssl_errors").(bool)
+	req.SSLExpirationReminder = d.Get("ssl_expiration_check").(bool)
 
 	alertContacts := d.Get("alert_contact").(*schema.Set)
 
@@ -239,6 +245,7 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 	// Add optional attributes
 	req.Interval = d.Get("interval").(int)
 	req.IgnoreSSLErrors = d.Get("ignore_ssl_errors").(bool)
+	req.SSLExpirationReminder = d.Get("ssl_expiration_check").(bool)
 
 	req.AlertContacts = make([]uptimerobotapi.MonitorRequestAlertContact, d.Get("alert_contact").(*schema.Set).Len())
 	for k, v := range d.Get("alert_contact").(*schema.Set).List() {
@@ -300,6 +307,7 @@ func updateMonitorResource(d *schema.ResourceData, m uptimerobotapi.Monitor) err
 	// d.Set("http_auth_type", m.HTTPAuthType)
 
 	d.Set("ignore_ssl_errors", m.IgnoreSSLErrors)
+	d.Set("ssl_expiration_check", m.SSLExpirationReminder)
 
 	if err := d.Set("custom_http_headers", m.CustomHTTPHeaders); err != nil {
 		return fmt.Errorf("error setting custom_http_headers for resource %s: %s", d.Id(), err)

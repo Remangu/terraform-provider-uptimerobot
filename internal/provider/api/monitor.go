@@ -84,7 +84,8 @@ type Monitor struct {
 	HTTPPassword string `json:"http_password"`
 	HTTPAuthType string `json:"http_auth_type"`
 
-	IgnoreSSLErrors bool `json:"ignore_ssl_errors"`
+	IgnoreSSLErrors       bool `json:"ignore_ssl_errors"`
+	SSLExpirationReminder bool `json:"ssl_expiration_check"`
 
 	CustomHTTPHeaders map[string]string
 
@@ -228,6 +229,15 @@ func (client UptimeRobotApiClient) GetMonitor(id int) (m Monitor, err error) {
 	} else {
 		m.IgnoreSSLErrors = false
 	}
+	
+	// Check for SSL expiration reminder
+	if sslExpirationReminder, exists := monitor["sslExpirationReminder"]; exists {
+		if sslExpirationReminder.(bool) {
+			m.SSLExpirationReminder = true
+		} else {
+			m.SSLExpirationReminder = false
+		}
+	}
 
 	customHTTPHeaders := make(map[string]string)
 	for k, v := range monitor["custom_http_headers"].(map[string]interface{}) {
@@ -272,7 +282,8 @@ type MonitorCreateRequest struct {
 	HTTPPassword string
 	HTTPAuthType string
 
-	IgnoreSSLErrors bool
+	IgnoreSSLErrors       bool
+	SSLExpirationReminder bool
 
 	AlertContacts []MonitorRequestAlertContact
 
@@ -317,6 +328,12 @@ func (client UptimeRobotApiClient) CreateMonitor(req MonitorCreateRequest) (m Mo
 		data.Add("ignore_ssl_errors", "1")
 	} else {
 		data.Add("ignore_ssl_errors", "0")
+	}
+
+	if req.SSLExpirationReminder {
+		data.Add("sslExpirationReminder", "true")
+	} else {
+		data.Add("sslExpirationReminder", "false")
 	}
 
 	acStrings := make([]string, len(req.AlertContacts))
@@ -365,7 +382,8 @@ type MonitorUpdateRequest struct {
 	HTTPPassword string
 	HTTPAuthType string
 
-	IgnoreSSLErrors bool
+	IgnoreSSLErrors       bool
+	SSLExpirationReminder bool
 
 	AlertContacts []MonitorRequestAlertContact
 
@@ -407,6 +425,12 @@ func (client UptimeRobotApiClient) UpdateMonitor(req MonitorUpdateRequest) (m Mo
 		data.Add("ignore_ssl_errors", "1")
 	} else {
 		data.Add("ignore_ssl_errors", "0")
+	}
+
+	if req.SSLExpirationReminder {
+		data.Add("sslExpirationReminder", "true")
+	} else {
+		data.Add("sslExpirationReminder", "false")
 	}
 
 	acStrings := make([]string, len(req.AlertContacts))
