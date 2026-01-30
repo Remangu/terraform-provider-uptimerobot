@@ -22,6 +22,7 @@ func Provider() *schema.Provider {
 			"api_key": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
+				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("UPTIMEROBOT_API_KEY", nil),
 			},
 		},

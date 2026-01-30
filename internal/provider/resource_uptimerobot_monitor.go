@@ -3,6 +3,7 @@ package provider
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	uptimerobotapi "github.com/Revolgy-Business-Solutions/terraform-provider-uptimerobot/internal/provider/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -131,7 +132,6 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 	case "port":
 		req.SubType = d.Get("sub_type").(string)
 		req.Port = d.Get("port").(int)
-		break
 	case "keyword":
 		req.KeywordType = d.Get("keyword_type").(string)
 		req.KeywordValue = d.Get("keyword_value").(string)
@@ -140,13 +140,11 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 		req.HTTPUsername = d.Get("http_username").(string)
 		req.HTTPPassword = d.Get("http_password").(string)
 		req.HTTPAuthType = d.Get("http_auth_type").(string)
-		break
 	case "http":
 		req.HTTPMethod = d.Get("http_method").(string)
 		req.HTTPUsername = d.Get("http_username").(string)
 		req.HTTPPassword = d.Get("http_password").(string)
 		req.HTTPAuthType = d.Get("http_auth_type").(string)
-		break
 	}
 
 	// Add optional attributes
@@ -191,6 +189,10 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
 	monitor, err := m.(uptimerobotapi.UptimeRobotApiClient).GetMonitor(id)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 

@@ -53,10 +53,15 @@ type AlertContact struct {
 
 func (client UptimeRobotApiClient) GetAlertContacts() (acs []AlertContact, err error) {
 	data := url.Values{}
+	maxRecords := 50
+	data.Add("limit", fmt.Sprintf("%d", maxRecords))
 
-	var total float64
+	var total int
+	offset := 0
 
 	for i := 0; i < page_limit; i++ {
+		data.Set("offset", fmt.Sprintf("%d", offset))
+
 		body, err := client.MakeCall(
 			"getAlertContacts",
 			data.Encode(),
@@ -73,30 +78,38 @@ func (client UptimeRobotApiClient) GetAlertContacts() (acs []AlertContact, err e
 		}
 
 		for _, i := range alertcontacts {
-			alertcontact := i.(map[string]interface{})
-			id := alertcontact["id"].(string)
-			friendlyName := alertcontact["friendly_name"].(string)
+			alertcontact, ok := i.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			id, _ := alertcontact["id"].(string)
+			friendlyName, _ := alertcontact["friendly_name"].(string)
 			value := ""
 			if alertcontact["value"] != nil {
-				value = alertcontact["value"].(string)
+				value, _ = alertcontact["value"].(string)
 			}
+			typeVal, _ := alertcontact["type"].(float64)
+			statusVal, _ := alertcontact["status"].(float64)
 			ac := AlertContact{
 				id,
 				friendlyName,
 				value,
-				intToString(alertContactType, int(alertcontact["type"].(float64))),
-				intToString(alertContactStatus, int(alertcontact["status"].(float64))),
+				intToString(alertContactType, int(typeVal)),
+				intToString(alertContactStatus, int(statusVal)),
 			}
 			acs = append(acs, ac)
 		}
 
-		total = body["total"].(float64)
-		if float64(len(acs)) == total {
+		if totalVal, ok := body["total"].(float64); ok {
+			total = int(totalVal)
+		}
+		offset += maxRecords
+		if len(acs) >= total {
 			break
 		}
 	}
 
-	if float64(len(acs)) != total {
+	if len(acs) < total {
 		err = fmt.Errorf("Hitting pagination limit of: %d", page_limit)
 	}
 
@@ -123,12 +136,38 @@ func (client UptimeRobotApiClient) GetAlertContact(id string) (ac AlertContact, 
 		return
 	}
 
-	alertcontact := alertcontacts[0].(map[string]interface{})
+	if len(alertcontacts) == 0 {
+		err = fmt.Errorf("Alert contact not found: %s", id)
+		return
+	}
 
-	ac.FriendlyName = alertcontact["friendly_name"].(string)
-	ac.Value = alertcontact["value"].(string)
-	ac.Type = intToString(alertContactType, int(alertcontact["type"].(float64)))
-	ac.Status = intToString(alertContactStatus, int(alertcontact["status"].(float64)))
+	// Find the alert contact with matching ID (API may return multiple contacts)
+	var alertcontact map[string]interface{}
+	for _, item := range alertcontacts {
+		contact, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		contactID, _ := contact["id"].(string)
+		if contactID == id {
+			alertcontact = contact
+			break
+		}
+	}
+
+	if alertcontact == nil {
+		err = fmt.Errorf("Alert contact not found: %s", id)
+		return
+	}
+
+	ac.FriendlyName, _ = alertcontact["friendly_name"].(string)
+	ac.Value, _ = alertcontact["value"].(string)
+	if typeVal, ok := alertcontact["type"].(float64); ok {
+		ac.Type = intToString(alertContactType, int(typeVal))
+	}
+	if statusVal, ok := alertcontact["status"].(float64); ok {
+		ac.Status = intToString(alertContactStatus, int(statusVal))
+	}
 
 	return
 }

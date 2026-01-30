@@ -399,7 +399,6 @@ func (client UptimeRobotApiClient) UpdateMonitor(req MonitorUpdateRequest) (m Mo
 		data.Add("url", req.URL)
 		data.Add("sub_type", fmt.Sprintf("%d", monitorSubType[req.SubType]))
 		data.Add("port", fmt.Sprintf("%d", req.Port))
-		break
 	case req.Type == "keyword":
 		data.Add("url", req.URL)
 		data.Add("keyword_type", fmt.Sprintf("%d", monitorKeywordType[req.KeywordType]))
@@ -408,7 +407,6 @@ func (client UptimeRobotApiClient) UpdateMonitor(req MonitorUpdateRequest) (m Mo
 		data.Add("http_auth_type", fmt.Sprintf("%d", monitorHTTPAuthType[req.HTTPAuthType]))
 		data.Add("http_username", req.HTTPUsername)
 		data.Add("http_password", req.HTTPPassword)
-		break
 	case req.Type == "http":
 		data.Add("url", req.URL)
 		data.Add("http_method", fmt.Sprintf("%d", monitorHTTPMethod[req.HTTPMethod]))
