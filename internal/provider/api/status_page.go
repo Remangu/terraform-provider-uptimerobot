@@ -55,16 +55,28 @@ func (client UptimeRobotApiClient) GetStatusPage(id int) (sp StatusPage, err err
 		return
 	}
 
-	psp := psps[0].(map[string]interface{})
-
-	sp.FriendlyName = psp["friendly_name"].(string)
-	sp.StandardURL = psp["standard_url"].(string)
-	if psp["custom_url"] != nil {
-		sp.CustomURL = psp["custom_url"].(string)
+	if len(psps) == 0 {
+		err = fmt.Errorf("Status page not found: %d", id)
+		return
 	}
-	sp.Sort = intToString(statusPageSort, int(psp["sort"].(float64)))
-	sp.Status = intToString(statusPageStatus, int(psp["status"].(float64)))
-	// sp.CustomDomain = psp["custom_domain"].(string)
+
+	psp, ok := psps[0].(map[string]interface{})
+	if !ok {
+		err = errors.New("Invalid status page data from server")
+		return
+	}
+
+	sp.FriendlyName, _ = psp["friendly_name"].(string)
+	sp.StandardURL, _ = psp["standard_url"].(string)
+	if psp["custom_url"] != nil {
+		sp.CustomURL, _ = psp["custom_url"].(string)
+	}
+	if sortVal, ok := psp["sort"].(float64); ok {
+		sp.Sort = intToString(statusPageSort, int(sortVal))
+	}
+	if statusVal, ok := psp["status"].(float64); ok {
+		sp.Status = intToString(statusPageStatus, int(statusVal))
+	}
 
 	monitor, ok := psp["monitors"].(float64)
 	if ok {
@@ -74,7 +86,9 @@ func (client UptimeRobotApiClient) GetStatusPage(id int) (sp StatusPage, err err
 		if ok {
 			monitors := make([]int, len(rawMonitors))
 			for k, v := range rawMonitors {
-				monitors[k] = int(v.(float64))
+				if monVal, ok := v.(float64); ok {
+					monitors[k] = int(monVal)
+				}
 			}
 			sp.Monitors = monitors
 		}
@@ -124,8 +138,17 @@ func (client UptimeRobotApiClient) CreateStatusPage(req StatusPageCreateRequest)
 	if err != nil {
 		return
 	}
-	psp := body["psp"].(map[string]interface{})
-	return client.GetStatusPage(int(psp["id"].(float64)))
+	psp, ok := body["psp"].(map[string]interface{})
+	if !ok {
+		err = errors.New("Invalid response from server when creating status page")
+		return
+	}
+	idVal, ok := psp["id"].(float64)
+	if !ok {
+		err = errors.New("Invalid status page ID in response")
+		return
+	}
+	return client.GetStatusPage(int(idVal))
 }
 
 type StatusPageUpdateRequest struct {

@@ -1,6 +1,9 @@
 package provider
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -53,9 +56,7 @@ func resourceAlertContactCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId(ac.ID)
-	updateAlertContactResource(d, ac)
-
-	return nil
+	return updateAlertContactResource(d, ac)
 }
 
 func resourceAlertContactRead(d *schema.ResourceData, m interface{}) error {
@@ -63,12 +64,14 @@ func resourceAlertContactRead(d *schema.ResourceData, m interface{}) error {
 
 	ac, err := m.(uptimerobotapi.UptimeRobotApiClient).GetAlertContact(id)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 
-	updateAlertContactResource(d, ac)
-
-	return nil
+	return updateAlertContactResource(d, ac)
 }
 
 func resourceAlertContactUpdate(d *schema.ResourceData, m interface{}) error {
@@ -84,7 +87,7 @@ func resourceAlertContactUpdate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	return nil
+	return resourceAlertContactRead(d, m)
 }
 
 func resourceAlertContactDelete(d *schema.ResourceData, m interface{}) error {
@@ -98,9 +101,18 @@ func resourceAlertContactDelete(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func updateAlertContactResource(d *schema.ResourceData, ac uptimerobotapi.AlertContact) {
-	d.Set("friendly_name", ac.FriendlyName)
-	d.Set("value", ac.Value)
-	d.Set("type", ac.Type)
-	d.Set("status", ac.Status)
+func updateAlertContactResource(d *schema.ResourceData, ac uptimerobotapi.AlertContact) error {
+	if err := d.Set("friendly_name", ac.FriendlyName); err != nil {
+		return fmt.Errorf("error setting friendly_name: %s", err)
+	}
+	if err := d.Set("value", ac.Value); err != nil {
+		return fmt.Errorf("error setting value: %s", err)
+	}
+	if err := d.Set("type", ac.Type); err != nil {
+		return fmt.Errorf("error setting type: %s", err)
+	}
+	if err := d.Set("status", ac.Status); err != nil {
+		return fmt.Errorf("error setting status: %s", err)
+	}
+	return nil
 }

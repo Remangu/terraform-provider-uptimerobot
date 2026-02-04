@@ -3,6 +3,7 @@ package provider
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -97,9 +98,7 @@ func resourceStatusPageCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId(fmt.Sprintf("%d", sp.ID))
-	updateStatusPageResource(d, sp)
-
-	return nil
+	return updateStatusPageResource(d, sp)
 }
 
 func resourceStatusPageRead(d *schema.ResourceData, m interface{}) error {
@@ -110,12 +109,14 @@ func resourceStatusPageRead(d *schema.ResourceData, m interface{}) error {
 
 	sp, err := m.(uptimerobotapi.UptimeRobotApiClient).GetStatusPage(id)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 
-	updateStatusPageResource(d, sp)
-
-	return nil
+	return updateStatusPageResource(d, sp)
 }
 
 func resourceStatusPageUpdate(d *schema.ResourceData, m interface{}) error {
@@ -143,9 +144,7 @@ func resourceStatusPageUpdate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	updateStatusPageResource(d, sp)
-
-	return nil
+	return updateStatusPageResource(d, sp)
 }
 
 func resourceStatusPageDelete(d *schema.ResourceData, m interface{}) error {
@@ -161,12 +160,27 @@ func resourceStatusPageDelete(d *schema.ResourceData, m interface{}) error {
 
 	return nil
 }
-func updateStatusPageResource(d *schema.ResourceData, sp uptimerobotapi.StatusPage) {
-	d.Set("friendly_name", sp.FriendlyName)
-	d.Set("standard_url", sp.StandardURL)
-	d.Set("custom_url", sp.CustomURL)
-	d.Set("sort", sp.Sort)
-	d.Set("status", sp.Status)
-	d.Set("dns_address", sp.DNSAddress)
-	d.Set("monitors", sp.Monitors)
+func updateStatusPageResource(d *schema.ResourceData, sp uptimerobotapi.StatusPage) error {
+	if err := d.Set("friendly_name", sp.FriendlyName); err != nil {
+		return fmt.Errorf("error setting friendly_name: %s", err)
+	}
+	if err := d.Set("standard_url", sp.StandardURL); err != nil {
+		return fmt.Errorf("error setting standard_url: %s", err)
+	}
+	if err := d.Set("custom_url", sp.CustomURL); err != nil {
+		return fmt.Errorf("error setting custom_url: %s", err)
+	}
+	if err := d.Set("sort", sp.Sort); err != nil {
+		return fmt.Errorf("error setting sort: %s", err)
+	}
+	if err := d.Set("status", sp.Status); err != nil {
+		return fmt.Errorf("error setting status: %s", err)
+	}
+	if err := d.Set("dns_address", sp.DNSAddress); err != nil {
+		return fmt.Errorf("error setting dns_address: %s", err)
+	}
+	if err := d.Set("monitors", sp.Monitors); err != nil {
+		return fmt.Errorf("error setting monitors: %s", err)
+	}
+	return nil
 }

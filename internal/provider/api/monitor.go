@@ -203,8 +203,16 @@ func (client UptimeRobotApiClient) GetMonitor(id int) (m Monitor, err error) {
 		//               should comment this out once that's fixed.
 		//
 		// m.HTTPMethod = intToString(monitorHTTPMethod, int(monitor["http_method"].(float64)))
-		m.HTTPUsername = monitor["http_username"].(string)
-		m.HTTPPassword = monitor["http_password"].(string)
+		if val := monitor["http_username"]; val != nil {
+			m.HTTPUsername = val.(string)
+		} else {
+			m.HTTPUsername = ""
+		}
+		if val := monitor["http_password"]; val != nil {
+			m.HTTPPassword = val.(string)
+		} else {
+			m.HTTPPassword = ""
+		       }
 	case m.Type == "http":
 		m.URL = monitor["url"].(string)
 		if val := monitor["http_auth_type"]; val != nil {
@@ -216,8 +224,16 @@ func (client UptimeRobotApiClient) GetMonitor(id int) (m Monitor, err error) {
 		//               should comment this out once that's fixed.
 		//
 		// m.HTTPMethod = intToString(monitorHTTPMethod, int(monitor["http_method"].(float64)))
-		m.HTTPUsername = monitor["http_username"].(string)
-		m.HTTPPassword = monitor["http_password"].(string)
+		if val := monitor["http_username"]; val != nil {
+			m.HTTPUsername = val.(string)
+		} else {
+			m.HTTPUsername = ""
+		}
+		if val := monitor["http_password"]; val != nil {
+			m.HTTPPassword = val.(string)
+		} else {
+			m.HTTPPassword = ""
+		}
 	case m.Type != "heartbeat":
 		m.URL = monitor["url"].(string)
 	}
@@ -383,7 +399,6 @@ func (client UptimeRobotApiClient) UpdateMonitor(req MonitorUpdateRequest) (m Mo
 		data.Add("url", req.URL)
 		data.Add("sub_type", fmt.Sprintf("%d", monitorSubType[req.SubType]))
 		data.Add("port", fmt.Sprintf("%d", req.Port))
-		break
 	case req.Type == "keyword":
 		data.Add("url", req.URL)
 		data.Add("keyword_type", fmt.Sprintf("%d", monitorKeywordType[req.KeywordType]))
@@ -392,7 +407,6 @@ func (client UptimeRobotApiClient) UpdateMonitor(req MonitorUpdateRequest) (m Mo
 		data.Add("http_auth_type", fmt.Sprintf("%d", monitorHTTPAuthType[req.HTTPAuthType]))
 		data.Add("http_username", req.HTTPUsername)
 		data.Add("http_password", req.HTTPPassword)
-		break
 	case req.Type == "http":
 		data.Add("url", req.URL)
 		data.Add("http_method", fmt.Sprintf("%d", monitorHTTPMethod[req.HTTPMethod]))

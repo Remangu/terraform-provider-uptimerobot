@@ -22,7 +22,7 @@ func dataSourceMonitor() *schema.Resource {
 			"keyword_type":        {Type: schema.TypeString, Computed: true},
 			"keyword_value":       {Type: schema.TypeString, Computed: true},
 			"http_username":       {Type: schema.TypeString, Computed: true},
-			"http_password":       {Type: schema.TypeString, Computed: true},
+			"http_password":       {Type: schema.TypeString, Computed: true, Sensitive: true},
 			"http_auth_type":      {Type: schema.TypeString, Computed: true},
 			"custom_http_headers": {Type: schema.TypeMap, Computed: true},
 			"alert_contact": {
