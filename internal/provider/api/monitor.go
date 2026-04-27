@@ -459,8 +459,17 @@ func (client UptimeRobotApiClient) DeleteMonitor(id int) (err error) {
 		"deleteMonitor",
 		data.Encode(),
 	)
-	if err != nil {
+	if err == nil {
 		return
+	}
+
+	// The UptimeRobot API can drop responses to bulk deletes (retry
+	// exhaustion, rate-limit, 5xx) even after the write has already
+	// been applied server-side. Verify via a read: if the monitor is
+	// gone, the delete effectively succeeded — surface success so
+	// Terraform can drop it from state on the first run.
+	if _, getErr := client.GetMonitor(id); getErr != nil && strings.Contains(getErr.Error(), "not found") {
+		return nil
 	}
 	return
 }
