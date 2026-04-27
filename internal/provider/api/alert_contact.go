@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 )
 
 // maximum pagination depth to allow (10*50=500 entries)
@@ -216,8 +217,13 @@ func (client UptimeRobotApiClient) DeleteAlertContact(id string) (err error) {
 		"deleteAlertContact",
 		data.Encode(),
 	)
-	if err != nil {
+	if err == nil {
 		return
+	}
+
+	// Idempotent delete — see DeleteMonitor for rationale.
+	if _, getErr := client.GetAlertContact(id); getErr != nil && strings.Contains(getErr.Error(), "not found") {
+		return nil
 	}
 	return
 }

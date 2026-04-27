@@ -203,8 +203,13 @@ func (client UptimeRobotApiClient) DeleteStatusPage(id int) (err error) {
 		"deletePSP",
 		data.Encode(),
 	)
-	if err != nil {
+	if err == nil {
 		return
+	}
+
+	// Idempotent delete — see DeleteMonitor for rationale.
+	if _, getErr := client.GetStatusPage(id); getErr != nil && strings.Contains(getErr.Error(), "not found") {
+		return nil
 	}
 	return
 }

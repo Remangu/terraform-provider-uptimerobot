@@ -7,13 +7,25 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
 )
 
 func New(apiKey string) UptimeRobotApiClient {
 	return UptimeRobotApiClient{apiKey}
+}
+
+func envInt(key string, fallback int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return fallback
 }
 
 type UptimeRobotApiClient struct {
@@ -26,7 +38,14 @@ func (client UptimeRobotApiClient) MakeCall(
 ) (map[string]interface{}, error) {
 	log.Printf("[DEBUG] Making request to: %#v", endpoint)
 
-	url := "https://api.uptimerobot.com/v2/" + endpoint
+	base := os.Getenv("UPTIMEROBOT_API_URL")
+	if base == "" {
+		base = "https://api.uptimerobot.com/v2/"
+	}
+	if !strings.HasSuffix(base, "/") {
+		base += "/"
+	}
+	url := base + endpoint
 
 	payload := strings.NewReader(
 		fmt.Sprintf("api_key=%s&format=json&%s", client.apiKey, params),
@@ -38,7 +57,13 @@ func (client UptimeRobotApiClient) MakeCall(
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 10
+	retryClient.RetryMax = envInt("UPTIMEROBOT_RETRY_MAX", 10)
+	if v := envInt("UPTIMEROBOT_RETRY_WAIT_MIN_SECONDS", 0); v > 0 {
+		retryClient.RetryWaitMin = time.Duration(v) * time.Second
+	}
+	if v := envInt("UPTIMEROBOT_RETRY_WAIT_MAX_SECONDS", 0); v > 0 {
+		retryClient.RetryWaitMax = time.Duration(v) * time.Second
+	}
 	standardClient := retryClient.StandardClient()
 
 	res, err := standardClient.Do(req)
